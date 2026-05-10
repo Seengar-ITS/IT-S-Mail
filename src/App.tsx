@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useAuth } from './hooks/useAuth'
+import SignIn from './pages/SignIn'
+import SignUp from './pages/SignUp'
 
 const FOLDERS = [
   { id: 'inbox', label: 'Inbox', count: 12 },
@@ -9,7 +12,7 @@ const FOLDERS = [
 ]
 
 const MAILS = [
-  { id: 1, from: 'Platform Team', subject: 'Welcome to Its Universe Mail', preview: 'Your mail service is now active and ready to use across all its universe platforms.', time: '10:24 AM', read: false, starred: true, folder: 'inbox' },
+  { id: 1, from: 'Platform Team', subject: 'Welcome to Its Universe Mail', preview: 'Your mail service is now active and ready to use across all Its Universe platforms.', time: '10:24 AM', read: false, starred: true, folder: 'inbox' },
   { id: 2, from: 'IT-S OS', subject: 'System notification: Services updated', preview: 'Several services have been updated and redeployed across the platform.', time: '9:11 AM', read: false, starred: false, folder: 'inbox' },
   { id: 3, from: 'IT-S Pay', subject: 'Transaction complete', preview: 'Your recent transaction has been processed successfully.', time: 'Yesterday', read: true, starred: false, folder: 'inbox' },
   { id: 4, from: 'IT-S Shield', subject: 'Security alert — new sign-in', preview: 'A new sign-in was detected from a new device. If this was you, no action needed.', time: 'Yesterday', read: true, starred: true, folder: 'inbox' },
@@ -18,9 +21,23 @@ const MAILS = [
 ]
 
 export default function App() {
+  const { user, loading, signOut } = useAuth()
+  const [view, setView] = useState<'signin' | 'signup'>('signin')
   const [selected, setSelected] = useState<typeof MAILS[0] | null>(MAILS[0])
   const [activeFolder, setActiveFolder] = useState('inbox')
   const [composing, setComposing] = useState(false)
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: '#6c63ff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
+
+  if (!user) {
+    if (view === 'signup') return <SignUp onSwitch={() => setView('signin')} />
+    return <SignIn onSwitch={() => setView('signup')} />
+  }
 
   const visible = MAILS.filter(m => m.folder === activeFolder)
 
@@ -61,12 +78,30 @@ export default function App() {
               <span style={{
                 background: activeFolder === f.id ? '#6c63ff' : 'var(--border)',
                 color: activeFolder === f.id ? '#fff' : 'var(--muted)',
-                fontSize: '0.7rem', fontWeight: 700,
-                padding: '1px 6px', borderRadius: 20,
+                fontSize: '0.7rem', fontWeight: 700, padding: '1px 6px', borderRadius: 20,
               }}>{f.count}</span>
             )}
           </button>
         ))}
+
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6c63ff, #a855f7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0,
+            }}>{user.email?.charAt(0).toUpperCase()}</div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </span>
+          </div>
+          <button onClick={signOut} style={{
+            width: '100%', background: 'none', border: '1px solid var(--border)',
+            color: 'var(--muted)', borderRadius: 8,
+            padding: '7px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+          }}>Log Out</button>
+        </div>
       </aside>
 
       <div style={{ width: 320, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
@@ -83,7 +118,7 @@ export default function App() {
             <div key={mail.id} onClick={() => setSelected(mail)} style={{
               padding: '1rem', borderBottom: '1px solid var(--border)',
               background: selected?.id === mail.id ? 'rgba(108,99,255,0.08)' : 'transparent',
-              cursor: 'pointer', transition: 'background 0.1s',
+              cursor: 'pointer',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={{ fontWeight: mail.read ? 400 : 700, fontSize: '0.85rem' }}>{mail.from}</span>
@@ -138,10 +173,9 @@ export default function App() {
 
       {composing && (
         <div style={{
-          position: 'fixed', bottom: 24, right: 24,
-          width: 480, background: 'var(--surface)',
-          border: '1px solid var(--border)', borderRadius: 12,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6)', zIndex: 200,
+          position: 'fixed', bottom: 24, right: 24, width: 480,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, boxShadow: '0 24px 64px rgba(0,0,0,0.6)', zIndex: 200,
         }}>
           <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>New Message</span>
